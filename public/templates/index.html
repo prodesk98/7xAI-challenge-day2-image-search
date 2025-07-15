@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelSearch - Find Beautiful Images</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .search-box {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .search-box:focus-within {
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        .image-card {
+            transition: all 0.2s ease;
+        }
+        .image-card:hover {
+            transform: scale(1.02);
+        }
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-indigo-600 mb-2">PixelSearch</h1>
+            <p class="text-gray-500">Discover millions of beautiful images</p>
+        </header>
+
+        <!-- Search Box -->
+        <div class="max-w-2xl mx-auto mb-12">
+            <div class="search-box bg-white rounded-full px-6 py-3 flex items-center">
+                <i class="fas fa-search text-gray-400 mr-3"></i>
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search for images..."
+                    class="flex-grow outline-none text-gray-700"
+                    autocomplete="off"
+                >
+                <button id="searchButton" class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition">
+                    Search
+                </button>
+            </div>
+            <div class="flex justify-center mt-4 gap-2">
+                <span class="text-xs text-gray-400">Try: </span>
+                <button class="suggestion-btn text-xs text-indigo-500 hover:text-indigo-700">mountains</button>
+                <button class="suggestion-btn text-xs text-indigo-500 hover:text-indigo-700">beach</button>
+                <button class="suggestion-btn text-xs text-indigo-500 hover:text-indigo-700">food</button>
+                <button class="suggestion-btn text-xs text-indigo-500 hover:text-indigo-700">animals</button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="text-center hidden py-12">
+            <div class="loading-spinner inline-block w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+            <p class="mt-4 text-gray-500">Searching for images...</p>
+        </div>
+
+        <!-- Results Grid -->
+        <div id="resultsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Images will be inserted here by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-20 hidden">
+            <i class="fas fa-image text-5xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-medium text-gray-500">No images found</h3>
+            <p class="text-gray-400 mt-2">Try searching for something else</p>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-20 text-center text-gray-400 text-sm">
+            <p>© 2023 PixelSearch. All images from Unsplash.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const emptyState = document.getElementById('emptyState');
+            const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+
+            // Sample image URLs from Unsplash
+            const sampleImages = [
+                { id: 1, url: 'https://source.unsplash.com/random/300x300/?nature', alt: 'Nature' },
+                { id: 2, url: 'https://source.unsplash.com/random/300x300/?mountain', alt: 'Mountain' },
+                { id: 3, url: 'https://source.unsplash.com/random/300x300/?ocean', alt: 'Ocean' },
+                { id: 4, url: 'https://source.unsplash.com/random/300x300/?city', alt: 'City' },
+                { id: 5, url: 'https://source.unsplash.com/random/300x300/?animal', alt: 'Animal' },
+                { id: 6, url: 'https://source.unsplash.com/random/300x300/?food', alt: 'Food' },
+                { id: 7, url: 'https://source.unsplash.com/random/300x300/?portrait', alt: 'Portrait' },
+                { id: 8, url: 'https://source.unsplash.com/random/300x300/?architecture', alt: 'Architecture' },
+            ];
+
+            // Function to display images
+            function displayImages(images) {
+                resultsContainer.innerHTML = '';
+
+                if (images.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                emptyState.classList.add('hidden');
+
+                images.forEach(image => {
+                    const imageCard = document.createElement('div');
+                    imageCard.className = 'image-card bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg';
+                    imageCard.innerHTML = `
+                        <img src="${image.url}" alt="${image.alt}" class="w-full h-48 object-cover">
+                        <div class="p-3">
+                            <p class="text-gray-700 text-sm truncate">${image.alt}</p>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-xs text-gray-500">ID: ${image.id}</span>
+                                <button class="text-indigo-500 hover:text-indigo-700">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(imageCard);
+                });
+            }
+
+            // Function to simulate search
+            function performSearch(query) {
+                loadingIndicator.classList.remove('hidden');
+                resultsContainer.innerHTML = '';
+
+                // Simulate API delay
+                setTimeout(() => {
+                    loadingIndicator.classList.add('hidden');
+
+                    if (!query.trim()) {
+                        displayImages([]);
+                        return;
+                    }
+
+                    // Filter sample images based on query (simulated)
+                    const filteredImages = sampleImages.filter(img =>
+                        img.alt.toLowerCase().includes(query.toLowerCase())
+                    );
+
+                    // If no exact matches, return all images (for demo purposes)
+                    displayImages(filteredImages.length > 0 ? filteredImages : sampleImages);
+                }, 1000);
+            }
+
+            // Event listeners
+            searchButton.addEventListener('click', () => {
+                performSearch(searchInput.value);
+            });
+
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch(searchInput.value);
+                }
+            });
+
+            suggestionButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    searchInput.value = button.textContent;
+                    performSearch(button.textContent);
+                });
+            });
+
+            // Initial load with some images
+            displayImages(sampleImages);
+        });
+    </script>
+</body>
+</html>

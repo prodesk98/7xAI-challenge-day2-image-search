@@ -1,0 +1,11 @@
+[project]
+name = "7xai-challenge-day2-image-search"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.116.1",
+    "langchain>=0.3.26",
+    "uvicorn>=0.27.1",
+    "jinja2>=3.1.2",
+]
